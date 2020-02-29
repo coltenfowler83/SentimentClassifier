@@ -211,7 +211,6 @@ class RNNClassifier(FNNClassifier):
         # Start of your code
 
         self.lstm = nn.LSTM(300, 20, bidirectional=True, batch_first=True)
-        self.pool = nn.AdaptiveMaxPool2d((1, 40))
         self.fc = nn.Linear(40, 1)
         self.sigmoid = nn.Sigmoid()
 
@@ -221,8 +220,8 @@ class RNNClassifier(FNNClassifier):
     def forward(self, feat):
         feat = feat.unsqueeze(0)
 
-        lstm = self.lstm(feat)
-        pool = self.pool(lstm[0])
+        lstm_out, _ = self.lstm(feat)
+        pool = torch.max(lstm_out, dim=1).values
         fc = self.fc(pool)
         output = self.sigmoid(fc)
 
@@ -239,7 +238,9 @@ class MyNNClassifier(FNNClassifier):
         super().__init__(args)
         # Start of your code
 
-        raise NotImplementedError('Your code here')
+        self.lstm = nn.LSTM(300, 30, 2, bidirectional=True, batch_first=True)
+        self.fc = nn.Linear(60, 1)
+        self.sigmoid = nn.Sigmoid()
 
         # End of your code
         self.optim = torch.optim.Adam(self.parameters(), args.learning_rate)
@@ -247,7 +248,10 @@ class MyNNClassifier(FNNClassifier):
     def forward(self, feat):
         feat = feat.unsqueeze(0)
 
-        raise NotImplementedError('Your code here')
+        lstm_out, _ = self.lstm(feat)
+        pool = torch.max(lstm_out, dim=1).values
+        fc = self.fc(pool)
+        output = self.sigmoid(fc)
 
 
 def train_model(args, train_exs: List[SentimentExample], dev_exs: List[SentimentExample]) -> SentimentClassifier:
