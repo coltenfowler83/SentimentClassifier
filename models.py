@@ -43,8 +43,15 @@ class BetterFeatureExtractor(FeatureExtractor):
         Q3: Implement the unigram feature extractor.
         Hint: You may want to use the Counter class.
         """
-        raise NotImplementedError('Your code here')
 
+        cnt = Counter()
+        cnt['<bias>'] = 1
+        # use unigram counts and bigram counts as features
+        for word in ex_words:
+            cnt[word.lower()] += 1
+        for word1, word2 in zip(ex_words, ex_words[1:]):
+            cnt[(word1.lower(), word2.lower())] += 1
+        return cnt
 
 class SentimentClassifier(object):
 
@@ -153,7 +160,10 @@ class FNNClassifier(SentimentClassifier, nn.Module):
         self.glove = E.GloveEmbedding('wikipedia_gigaword', 300, default='zero')
         ### Start of your code
 
-        raise NotImplementedError('Your code here')
+        self.fc1 = nn.Linear(300, 100)
+        self.tanh = nn.Tanh()
+        self.fc2 = nn.Linear(100, 1)
+        self.sigmoid = nn.Sigmoid()
 
         ### End of your code
 
@@ -169,16 +179,25 @@ class FNNClassifier(SentimentClassifier, nn.Module):
     def forward(self, feat) -> torch.Tensor:
         # compute the activation of the FNN
         feat = feat.unsqueeze(0)
-        raise NotImplementedError('Your code here')
+
+        sum = torch.sum(feat, dim=1)
+        hidden = self.fc1(sum)
+        tanh = self.tanh(hidden)
+        output = self.fc2(tanh)
+        output = self.sigmoid(output)
+        return output
 
     def extract_pred(self, output) -> int:
         # compute the prediction of the FNN given the activation
-        raise NotImplementedError('Your code here')
+        return 1 if output.item() > 0.5 else 0
 
     def update_parameters(self, output, feat, ex, lr):
         # update the weight of the perceptron given its activation, the input features, the example, and the learning rate
         target = torch.Tensor([[ex.label]])
-        raise NotImplementedError('Your code here')
+        self.optim.zero_grad()
+        loss = nn.functional.binary_cross_entropy(output, target)
+        loss.backward()
+        self.optim.step()
 
 
 class RNNClassifier(FNNClassifier):
@@ -191,14 +210,23 @@ class RNNClassifier(FNNClassifier):
         super().__init__(args)
         # Start of your code
 
-        raise NotImplementedError('Your code here')
+        self.lstm = nn.LSTM(300, 20, bidirectional=True, batch_first=True)
+        self.pool = nn.AdaptiveMaxPool2d((1, 40))
+        self.fc = nn.Linear(40, 1)
+        self.sigmoid = nn.Sigmoid()
 
         # End of your code
         self.optim = torch.optim.Adam(self.parameters(), args.learning_rate)
 
     def forward(self, feat):
         feat = feat.unsqueeze(0)
-        raise NotImplementedError('Your code here')
+
+        lstm = self.lstm(feat)
+        pool = self.pool(lstm[0])
+        fc = self.fc(pool)
+        output = self.sigmoid(fc)
+
+        return output
 
 
 class MyNNClassifier(FNNClassifier):
