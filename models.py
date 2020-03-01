@@ -253,6 +253,8 @@ class MyNNClassifier(FNNClassifier):
         fc = self.fc(pool)
         output = self.sigmoid(fc)
 
+        return output
+
 
 def train_model(args, train_exs: List[SentimentExample], dev_exs: List[SentimentExample]) -> SentimentClassifier:
     """
